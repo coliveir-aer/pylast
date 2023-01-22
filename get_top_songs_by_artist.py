@@ -13,8 +13,6 @@ def main(artist_name, album_limit):
     API_KEY = os.environ.get("FM_API_KEY") 
     API_SECRET = os.environ.get("FM_API_SECRET")
 
-
-
     network = pylast.LastFMNetwork(
         api_key=API_KEY,
         api_secret=API_SECRET,
