@@ -20,8 +20,8 @@ def fetch_top_albums(artist_name, album_limit):
     )
 
     album_table = {}
-    songlist_table = {}
     song_table = {}
+    songlist_table = []
 
     print(f"Querying the last.fm for the top {album_limit} album{'s' if album_limit > 1 else ''} from {artist_name}...")
 
@@ -31,7 +31,6 @@ def fetch_top_albums(artist_name, album_limit):
     print(f"Found {len(albums)} album{'s' if len(albums) > 1 else ''}.")
     
     album_id = 1
-    songlist_id = 1
     song_id = 1
 
     for album in albums:
@@ -45,16 +44,12 @@ def fetch_top_albums(artist_name, album_limit):
             # Parse duration into hh:mm:ss so it can be read into mysql TIME type as string
             delta_t=datetime.timedelta(seconds=track.get_duration()/1000)
             duration = f"{delta_t.seconds//3600:02}:{delta_t.seconds//60:02}:{delta_t.seconds%60:02}"
-            songlist_table[songlist_id] = {
-                "album_id": album_id,
-                "song_id": song_id,
-            }
+            songlist_table.append((album_id, song_id))
             song_table[song_id] = {
                 "song_name": track.get_name(),
                 "duration": duration,
                 "listener_count": track.get_listener_count(),
             }
-            songlist_id += 1
             song_id += 1
         album_id += 1
 
@@ -69,13 +64,23 @@ def fetch_top_albums(artist_name, album_limit):
 
     for table_name, table in tables:
         with open(f"{table_name}_table.sql", "w") as fp:
-            for id, rec in sorted(table.items()):
-                keylist = sorted(rec.keys())
-                insert_stmt = f"INSERT INTO {table_name} "
-                insert_stmt += f"({table_name}_id, {', '.join(keylist)})"
-                value_strs = [repr(rec[k]) for k in keylist]
-                insert_stmt += f" VALUES ({id}, {', '.join(value_strs)});\n"
-                fp.write(insert_stmt)
+            if isinstance(table, dict):
+                for id, rec in sorted(table.items()):
+                    keylist = sorted(rec.keys())
+                    insert_stmt = f"INSERT INTO {table_name} "
+                    insert_stmt += f"({table_name}_id, {', '.join(keylist)})"
+                    value_strs = [repr(rec[k]) for k in keylist]
+                    insert_stmt += f" VALUES ({id}, {', '.join(value_strs)});\n"
+                    fp.write(insert_stmt)
+            elif isinstance(table, list):
+                # songlist is the only list, so set unpack the ids from tuple
+                for album_id, song_id in table:
+                    insert_stmt = f"INSERT INTO {table_name} "
+                    insert_stmt += f"(album_id, song_id)"
+                    insert_stmt += f" VALUES ({album_id}, {song_id});\n"
+                    fp.write(insert_stmt)
+            else:
+                raise ValueError("table must be list or dict")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
