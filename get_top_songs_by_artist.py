@@ -25,57 +25,47 @@ def main(artist_name, album_limit):
     songlist_table = {}
     song_table = {}
 
+    print(f"Querying the last.fm for the top {album_limit} album(s) from {artist_name}...")
+
     artist = network.get_artist(artist_name)
     albums = artist.get_top_albums(limit=album_limit)
+
+    print(f"Found {len(albums)} album(s).")
+    
     album_id = 1
     songlist_id = 1
     song_id = 1
 
     for album in albums:
-        album_playcount = album.item.get_playcount()
-        album_listener_count = album.item.get_listener_count()
         album_table[album_id] = {
             "name" : album.item.get_name(),
-            "album_listener_count": album_listener_count,
+            "album_listener_count": album.item.get_listener_count(),
         }
-        print("Parsing data for album: ")
-        pprint.pprint(album_table[album_id])
-        tracklist = album.item.get_tracks()
-
-        for j, track in enumerate(tracklist):
-            track_name = track.get_name()
-            #print(f"{track_name=}")
+        print(f"Parsing song data from album: {album_table[album_id]['name']}")
+        for track in album.item.get_tracks():
+            # Parse duration into hh:mm:ss so it can be read into mysql TIME type as string
             delta_t=datetime.timedelta(seconds=track.get_duration()/1000)
-            duration = f"{delta_t.seconds//60:02}:{delta_t.seconds%60:02}"
-            #print(f"{duration=}")
-            listener_count=track.get_listener_count()
-            playcount = track.get_playcount()
+            duration = f"{delta_t.seconds//3600:02}:{delta_t.seconds//60:02}:{delta_t.seconds%60:02}"
             songlist_table[songlist_id] = {
                 "album_id": album_id,
                 "song_id": song_id,
             }
-            songlist_id += 1
             song_table[song_id] = {
                 "song_id": song_id,
                 "song_name": track.get_name(),
                 "duration": duration,
-                "listener_count": listener_count,
+                "listener_count": track.get_listener_count(),
             }
-            
+            songlist_id += 1
             song_id += 1
-
         album_id += 1
 
-    # album_table 
-    # songlist_table 
-    # songs_table 
     tables = [
         ("album", album_table),
         ("songlist", songlist_table),
         ("song", song_table)
     ]
     for table_name, table in tables:
-        print(json.dumps(table, indent=4))
         with open(f"{table_name}_table.json", "w") as fp:
             json.dump(table, fp, indent=4)
 
