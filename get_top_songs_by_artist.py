@@ -36,11 +36,11 @@ def fetch_top_albums(artist_name, album_limit):
 
     for album in albums:
         album_table[album_id] = {
-            "name" : album.item.get_name(),
+            "album_name" : album.item.get_name(),
             "album_listener_count": album.item.get_listener_count(),
         }
         tracks = album.item.get_tracks()
-        print(f"Parsing {len(tracks)} track{'s' if len(tracks) > 1 else ''} from album \"{album_table[album_id]['name']}\"")
+        print(f"Parsing {len(tracks)} track{'s' if len(tracks) > 1 else ''} from album \"{album_table[album_id]['album_name']}\"")
         for track in tracks:
             # Parse duration into hh:mm:ss so it can be read into mysql TIME type as string
             delta_t=datetime.timedelta(seconds=track.get_duration()/1000)
