@@ -5,7 +5,7 @@ import datetime
 import os
 import json
 
-def main(artist_name, album_limit):
+def fetch_top_albums(artist_name, album_limit):
 
     # You have to have your own unique two values for API_KEY and API_SECRET
     # Obtain yours from https://www.last.fm/api/account/create for Last.fm
@@ -81,8 +81,8 @@ def main(artist_name, album_limit):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--artist", help="artist to fetch top albums", default="The Rolling Stones")
-    parser.add_argument("--album_limit", help="max number of albums", default=8)
+    parser.add_argument("--limit", type=int, help="max number of albums", default=8)
     args = parser.parse_args()
     pprint.pprint(args)
-    main(args.artist, args.album_limit)
+    fetch_top_albums(args.artist, args.limit)
     
